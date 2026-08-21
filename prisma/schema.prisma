@@ -33,6 +33,9 @@ model DoctorProfile{
   workEndTime String
   slotDurationMin Int @default(30)
 
+  slots Slot[]
+  bookings Booking[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -43,6 +46,127 @@ model PatientProfile{
   user User @relation(fields: [userId], references: [id])
   dateOfBirth DateTime?
   phone String?
+
+  slotHolds SlotHold[]
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum SlotStatus{
+  AVAILABLE
+  HELD
+  BOOKED
+  CANCELLED
+}
+
+model Slot{
+  id String @id @default(cuid())
+  doctorId String
+  doctor DoctorProfile @relation(fields: [doctorId] , references: [id])
+  startTime DateTime
+  endTime DateTime
+  status SlotStatus @default(AVAILABLE)
+
+  hold SlotHold?
+  booking Booking?
+
+  createdAt DateTime @default(now())
+
+  @@unique([doctorId , startTime])
+}
+
+model SlotHold{
+  id String @id @default(cuid())
+  slotId String @unique
+  slot Slot @relation(fields: [slotId] , references: [id])
+
+  patientId String
+  patient PatientProfile @relation(fields: [patientId] , references: [id])
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+}
+
+enum BookingStatus{
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum UrgencyLevel{
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Booking{
+  id String @id @default(cuid())
+  slotId String @unique
+  slot Slot @relation(fields: [slotId] , references: [id])
+
+  patientId String
+  patient PatientProfile @relation(fields: [patientId] , references: [id])
+
+  doctorId String
+  doctor DoctorProfile @relation(fields: [doctorId] , references: [id])
+
+  status BookingStatus @default(CONFIRMED)
+
+  symptoms String?
+  urgencyLevel UrgencyLevel?
+  chiefComplaint String?
+  suggestedQuestions String?
+  preVisitSummaryStatus String @default("pending")
+
+  doctorNotes String?
+  prescription String?
+  postVisitSummary String?
+  postVisitSummaryStatus String @default("pending")
+
+  prescriptionItems PrescriptionItem[]
+  notifications NotificationLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PrescriptionItem{
+  id String @id @default(cuid())
+  bookingId String
+  booking Booking @relation(fields: [bookingId] , references: [id])
+
+  medicineName String
+  frequency String
+  durationDays Int
+
+  createdAt DateTime @default(now())
+}
+
+enum NotificationType{
+  BOOKING_CONFIRMATION
+  REMAINDER
+  CANCELLATION
+  MEDICATION_REMAINDER
+}
+
+enum NotificationStatus{
+  PENDING
+  SENT
+  FAILED
+}
+
+model NotificationLog{
+  id String @id @default(cuid())
+  bookingId String
+  booking Booking @relation(fields: [bookingId] , references: [id])
+
+  type NotificationType
+  status NotificationStatus @default(PENDING)
+  retryCount Int @default(0)
+  errorMessage String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
