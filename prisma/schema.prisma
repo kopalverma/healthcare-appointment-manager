@@ -25,20 +25,35 @@ model User{
   patientProfile PatientProfile?
 }
 
-model DoctorProfile{
-  id String @id @default(cuid())
-  userId String @unique
-  user User @relation(fields: [userId], references: [id])
-  specialisation String
-  workStartTime String
-  workEndTime String
-  slotDurationMin Int @default(30)
+model DoctorProfile {
+  id              String     @id @default(cuid())
+  userId          String     @unique
+  user            User       @relation(fields: [userId], references: [id])
 
-  slots Slot[]
-  bookings Booking[]
+  specialisation  String
+  workStartTime   String
+  workEndTime     String
+  slotDurationMin Int        @default(30)
+
+  slots           Slot[]
+  bookings        Booking[]
+  leaveDays       LeaveDay[]
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+}
+
+model LeaveDay {
+  id       String   @id @default(cuid())
+  doctorId String
+  doctor   DoctorProfile @relation(fields: [doctorId], references: [id])
+
+  date     DateTime
+  reason   String?
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@unique([doctorId, date])
 }
 
 model PatientProfile{
