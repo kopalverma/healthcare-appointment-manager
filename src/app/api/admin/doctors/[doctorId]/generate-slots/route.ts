@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-export async function POST(req: NextRequest, { params }: { params: { doctorId: string } }) {
+export async function POST(
+    req: NextRequest,
+    { params }: { params: Promise<{ doctorId: string }> }
+    ) {
     try {
-        const { startDate, endDate } = await req.json() // e.g. "2026-08-25", "2026-08-31"
+        const { doctorId } = await params
+        const { startDate, endDate } = await req.json() 
 
-        const doctor = await prisma.doctorProfile.findUnique({ where: { id: params.doctorId } })
+        const doctor = await prisma.doctorProfile.findUnique({ where: { id: doctorId } })
         if (!doctor) return NextResponse.json({ error: 'Doctor not found' }, { status: 404 })
 
         const leaveDays = await prisma.leaveDay.findMany({
-        where: { doctorId: params.doctorId, date: { gte: new Date(startDate), lte: new Date(endDate) } },
+        where: { doctorId: doctorId, date: { gte: new Date(startDate), lte: new Date(endDate) } },
         })
         const leaveDateStrings = new Set(leaveDays.map((l) => l.date.toISOString().split('T')[0]))
 
