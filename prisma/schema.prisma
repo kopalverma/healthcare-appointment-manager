@@ -134,7 +134,7 @@ model Booking{
   symptoms String?
   urgencyLevel UrgencyLevel?
   chiefComplaint String?
-  suggestedQuestions String?
+  suggestedQuestions String[]
   preVisitSummaryStatus String @default("pending")
 
   doctorNotes String?
