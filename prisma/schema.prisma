@@ -141,10 +141,10 @@ model Booking{
   prescription String?
   postVisitSummary String?
   postVisitSummaryStatus String @default("pending")
+  calendarEventId String?
 
   prescriptionItems PrescriptionItem[]
   notifications NotificationLog[]
-  calendarEventId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

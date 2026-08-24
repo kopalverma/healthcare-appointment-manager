@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { adminAuth } from '@/lib/firebase/admin'
 import { generatePreVisitSummary } from '@/lib/llm/preVisitSummary'
 import { sendBookingConfirmation } from '@/lib/email/sendBookingConfirmation'
+import { createCalendarEvent } from '@/lib/calendar/createEvent'
 
 export async function POST(req: NextRequest) {
     try {
@@ -43,6 +44,44 @@ export async function POST(req: NextRequest) {
 
         return newBooking
         })
+
+        const calendarBooking = await prisma.booking.findUnique({
+    where: { id: booking.id },
+    include: {
+        slot: true,
+        patient: {
+            include: {
+                user: true,
+            },
+        },
+        doctor: {
+            include: {
+                user: true,
+            },
+        },
+    },
+})
+
+if (calendarBooking) {
+    const calendarResult = await createCalendarEvent({
+        id: calendarBooking.id,
+        startTime: calendarBooking.slot.startTime,
+        endTime: calendarBooking.slot.endTime,
+        patientEmail: calendarBooking.patient.user.email,
+        doctorEmail: calendarBooking.doctor.user.email,
+        patientName: calendarBooking.patient.user.name,
+        doctorName: calendarBooking.doctor.user.name,
+    })
+
+    if (calendarResult.success && calendarResult.eventId) {
+        await prisma.booking.update({
+            where: { id: booking.id },
+            data: {
+                calendarEventId: calendarResult.eventId,
+            },
+        })
+    }
+}
 
         const summaryResult = await generatePreVisitSummary(symptoms)
 
